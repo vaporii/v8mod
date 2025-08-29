@@ -1,0 +1,36 @@
+local std = @import("std");
+expand std; // allow use of all std properties/modules as local
+// or, you can do
+// expand @import("std");
+
+// public module named `main`. opens by default
+public mod main => Window{
+    title = "bar",
+    
+    // dock     - dock, reserves screen area
+    // window   - tiles like a regular window
+    // overlay  - floats over other windows
+    type = .dock,
+    
+    // background - behind everything else
+    // foreground - in front of everything else
+    layer = .foreground
+
+    // 100sw = 100% screen width
+    width = 100sw - 20px,
+    height = 50px,
+
+    // vertical   - vertical elements, no side-by-side
+    // horizontal - horizontal elements, no elements on top
+    // grid       - specify gridColumns and gridRows as grid number amount.
+    //              children have gridColumnPos, gridRowPos, gridColumnSpan, gridRowSpan
+    alignment = .vertical, // .enum_field or std.Alignment.vertical
+
+    // dock   - |□     □     □|
+    // equal  - |  □   □   □  |
+    // center - |    □ □ □    |
+    // start  - |□ □ □        |
+    // end    - |        □ □ □|
+    spacing = .dock, // .center or std.Spacing.center
+    modules = [], // children
+}
