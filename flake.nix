@@ -3,9 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    zig.url = "github:mitchellh/zig-overlay";
   };
 
-  outputs = { self, nixpkgs }@inputs:
+  outputs = { self, nixpkgs, zig }@inputs:
   let
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
@@ -13,13 +14,15 @@
   {
     packages.${system}.default = pkgs.stdenv.mkDerivation {
       name = "v8mod";
-      nativeBuildInputs = [ pkgs.cmake ];
+      nativeBuildInputs = [ zig.packages.x86_64-linux."0.14.0" pkgs.sdl3 ];
       buildInputs = [ pkgs.sdl3 ];
     };
 
     devShells.x86_64-linux.default = pkgs.mkShell {
       packages = with pkgs; [
-        gcc
+        zig.packages.x86_64-linux."0.14.0"
+        zls
+        sdl3
       ];
     };
   };
