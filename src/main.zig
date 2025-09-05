@@ -1,5 +1,6 @@
 const Elements = @import("layout/element.zig");
 const Layout = @import("layout/Layout.zig");
+const Color = @import("layout/Color.zig");
 const std = @import("std");
 const c = @import("c.zig").c;
 
@@ -43,42 +44,59 @@ pub fn main() !void {
             }
         }
 
-        const render_commands = try Layout.layout(.{
-            .children = &[_]Elements.Element{},
-            .background_color = .{
-                .r = 100,
-                .g = 100,
-                .b = 100,
-                .a = 255,
+        const layout = Elements.RootElement.init(.{
+            .background_color = Color.black,
+            .children = &.{
+                Elements.Element.create(.{
+                    .width = Layout.Sizing.fit(.{}),
+                    .height = Layout.Sizing.fit(.{}),
+                    .padding = Layout.Padding.pad(10, 10, 10, 10),
+                    .layout = .horizontal,
+                    .alignment = .end, // start (' ' ), center (- - ), end (. . )
+                    .justify = .center, // start (= =  ), center ( = = ), end (  = =) (only has an effect if children length along axis < parent length along axis)
+                    .background_color = Color.dark_magenta,
+                    .children = &.{
+                        Elements.Element.create(.{
+                            .width = Layout.Sizing.fixed(200),
+                            .height = Layout.Sizing.fixed(200),
+                            .background_color = Color.lavender,
+                            .margin = Layout.Margin.margin(0, 10, 0, 0),
+                        }),
+                        Elements.Element.create(.{
+                            .width = Layout.Sizing.grow(.{ .max_size = 500 }),
+                            .height = Layout.Sizing.grow(.{}),
+                            .background_color = Color.cyan,
+                        }),
+                    },
+                }),
             },
-            .w = @intCast(width),
-            .h = @intCast(height),
-            .x = 0,
-            .y = 0,
-        }, std.heap.page_allocator);
+        });
+        _ = layout;
+
+        // const render_commands = try Layout.render(layout, std.heap.page_allocator);
 
         _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         _ = c.SDL_RenderClear(renderer);
 
-        for (render_commands) |command| {
-            switch (command) {
-                .rect => {
-                    _ = c.SDL_SetRenderDrawColor(
-                        renderer,
-                        command.rect.background_color.r,
-                        command.rect.background_color.g,
-                        command.rect.background_color.b,
-                        command.rect.background_color.a,
-                    );
-                    _ = c.SDL_RenderFillRect(renderer, &c.SDL_FRect{
-                        .x = @floatFromInt(command.rect.x),
-                        .y = @floatFromInt(command.rect.y),
-                        .w = @floatFromInt(command.rect.w),
-                        .h = @floatFromInt(command.rect.h),
-                    });
-                },
-            }
-        }
+        // for (render_commands) |command| {
+        //     switch (command) {
+        //         .rect => {
+        //             _ = c.SDL_SetRenderDrawColor(
+        //                 renderer,
+        //                 command.rect.background_color.r,
+        //                 command.rect.background_color.g,
+        //                 command.rect.background_color.b,
+        //                 command.rect.background_color.a,
+        //             );
+        //             _ = c.SDL_RenderFillRect(renderer, &c.SDL_FRect{
+        //                 .x = @floatFromInt(command.rect.x),
+        //                 .y = @floatFromInt(command.rect.y),
+        //                 .w = @floatFromInt(command.rect.w),
+        //                 .h = @floatFromInt(command.rect.h),
+        //             });
+        //         },
+        //     }
+        // }
         _ = c.SDL_RenderPresent(renderer);
 
         // c.SDL_Delay(16);
