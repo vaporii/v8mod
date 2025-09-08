@@ -1,5 +1,76 @@
 const Color = @This();
 
+fn hexVal(c: u8) i32 {
+    if (c >= '0' and c <= '9') return @intCast(c - '0');
+    if (c >= 'a' and c <= 'f') return @intCast(c - 'a' + 10);
+    if (c >= 'A' and c <= 'F') return @intCast(c - 'A' + 10);
+    return -1;
+}
+
+fn pairToByte(high: u8, low: u8) i32 {
+    const hi = hexVal(high);
+    const lo = hexVal(low);
+    if (hi < 0 or lo < 0) return -1;
+    return hi * 16 + lo;
+}
+
+fn nibbleToByte(n: u8) i32 {
+    const v = hexVal(n);
+    if (v < 0) return -1;
+    return v * 17;
+}
+
+pub fn fromHex(hex: []const u8) Color {
+    var s = hex;
+    if (s.len == 0) return Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
+
+    if (s[0] == '#') s = s[1..];
+
+    var r: i32 = -1;
+    var g: i32 = -1;
+    var b: i32 = -1;
+    var a: i32 = 255;
+
+    switch (s.len) {
+        3 => {
+            r = nibbleToByte(s[0]);
+            g = nibbleToByte(s[1]);
+            b = nibbleToByte(s[2]);
+        },
+        4 => {
+            r = nibbleToByte(s[0]);
+            g = nibbleToByte(s[1]);
+            b = nibbleToByte(s[2]);
+            a = nibbleToByte(s[3]);
+        },
+        6 => {
+            r = pairToByte(s[0], s[1]);
+            g = pairToByte(s[2], s[3]);
+            b = pairToByte(s[4], s[5]);
+        },
+        8 => {
+            r = pairToByte(s[0], s[1]);
+            g = pairToByte(s[2], s[3]);
+            b = pairToByte(s[4], s[5]);
+            a = pairToByte(s[6], s[7]);
+        },
+        else => {
+            return Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
+        },
+    }
+
+    if (r < 0 or g < 0 or b < 0 or a < 0) {
+        return Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
+    }
+
+    return Color{
+        .r = @intCast(r),
+        .g = @intCast(g),
+        .b = @intCast(b),
+        .a = @intCast(a),
+    };
+}
+
 pub const indian_red = Color{ .r = 205, .g = 92, .b = 92, .a = 255 };
 pub const light_coral = Color{ .r = 240, .g = 128, .b = 128, .a = 255 };
 pub const salmon = Color{ .r = 250, .g = 128, .b = 114, .a = 255 };
