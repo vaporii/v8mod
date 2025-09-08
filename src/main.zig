@@ -29,6 +29,7 @@ pub fn main() !void {
     var width: c_int = undefined;
     var height: c_int = undefined;
 
+    var time: f64 = 0.0;
     var running = true;
     while (running) {
         _ = c.SDL_GetWindowSizeInPixels(window, &width, &height);
@@ -44,62 +45,106 @@ pub fn main() !void {
             }
         }
 
-        const layout = Elements.RootElement.init(.{
-            .background_color = Color.black,
+        // const layout = Elements.Element.create(.{
+        //     .width = Layout.Sizing.grow(.{}),
+        //     .height = Layout.Sizing.grow(.{}),
+        //     .background_color = Color.black,
+        //     .children = &.{
+        //         Elements.Element.create(.{
+        //             .width = Layout.Sizing.fit(.{}),
+        //             .height = Layout.Sizing.fit(.{}),
+        //             .padding = Layout.Padding.pad(10, 10, 10, 10),
+        //             .layout = .horizontal,
+        //             .alignment = .end, // start (' ' ), center (- - ), end (. . )
+        //             .justify = .center, // start (= =  ), center ( = = ), end (  = =) (only has an effect if children length along axis < parent length along axis)
+        //             .background_color = Color.dark_magenta,
+        //             .children = &.{
+        //                 Elements.Element.create(.{
+        //                     .width = Layout.Sizing.fixed(200),
+        //                     .height = Layout.Sizing.fixed(200),
+        //                     .background_color = Color.lavender,
+        //                     .margin = Layout.Margin.margin(0, 10, 0, 0),
+        //                 }),
+        //                 Elements.Element.create(.{
+        //                     .width = Layout.Sizing.grow(.{ .max_size = 500 }),
+        //                     .height = Layout.Sizing.grow(.{}),
+        //                     .background_color = Color.cyan,
+        //                 }),
+        //             },
+        //         }),
+        //     },
+        // });
+
+        var layout = Elements.Element.create(.{
+            .background_color = Color.white,
+            .width = .fixed(@intCast(width)),
+            .height = .fixed(@intCast(height)),
             .children = &.{
                 Elements.Element.create(.{
-                    .width = Layout.Sizing.fit(.{}),
-                    .height = Layout.Sizing.fit(.{}),
-                    .padding = Layout.Padding.pad(10, 10, 10, 10),
+                    .width = .grow(.{}),
+                    .height = .grow(.{}),
+                    .background_color = Color.blue,
+                    .padding = .pad(25, 25, 25, 25),
+                    .child_gap = 25,
                     .layout = .horizontal,
-                    .alignment = .end, // start (' ' ), center (- - ), end (. . )
-                    .justify = .center, // start (= =  ), center ( = = ), end (  = =) (only has an effect if children length along axis < parent length along axis)
-                    .background_color = Color.dark_magenta,
                     .children = &.{
                         Elements.Element.create(.{
-                            .width = Layout.Sizing.fixed(200),
-                            .height = Layout.Sizing.fixed(200),
-                            .background_color = Color.lavender,
-                            .margin = Layout.Margin.margin(0, 10, 0, 0),
+                            .width = .fixed(200),
+                            .height = .fixed(200),
+                            .background_color = Color.pink,
                         }),
                         Elements.Element.create(.{
-                            .width = Layout.Sizing.grow(.{ .max_size = 500 }),
-                            .height = Layout.Sizing.grow(.{}),
-                            .background_color = Color.cyan,
+                            .width = .grow(.{}),
+                            .height = .grow(.{}),
+                            .background_color = Color.yellow,
+                        }),
+                        Elements.Element.create(.{
+                            .width = .fixed(200),
+                            .height = .fixed(200),
+                            .background_color = Color.light_blue,
                         }),
                     },
                 }),
+                // Elements.Element.create(.{
+                //     .width = .fixed(300),
+                //     .height = .fixed(100),
+                //     .background_color = Color.light_gray,
+                // }),
             },
         });
-        _ = layout;
+        layout.growElements();
+        layout.calculatePositions();
+        // _ = layout;
 
-        // const render_commands = try Layout.render(layout, std.heap.page_allocator);
+        const render_commands = try Layout.render(layout, std.heap.page_allocator);
+        defer std.heap.page_allocator.free(render_commands);
 
         _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         _ = c.SDL_RenderClear(renderer);
 
-        // for (render_commands) |command| {
-        //     switch (command) {
-        //         .rect => {
-        //             _ = c.SDL_SetRenderDrawColor(
-        //                 renderer,
-        //                 command.rect.background_color.r,
-        //                 command.rect.background_color.g,
-        //                 command.rect.background_color.b,
-        //                 command.rect.background_color.a,
-        //             );
-        //             _ = c.SDL_RenderFillRect(renderer, &c.SDL_FRect{
-        //                 .x = @floatFromInt(command.rect.x),
-        //                 .y = @floatFromInt(command.rect.y),
-        //                 .w = @floatFromInt(command.rect.w),
-        //                 .h = @floatFromInt(command.rect.h),
-        //             });
-        //         },
-        //     }
-        // }
+        for (render_commands) |command| {
+            switch (command) {
+                .rect => {
+                    _ = c.SDL_SetRenderDrawColor(
+                        renderer,
+                        command.rect.background_color.r,
+                        command.rect.background_color.g,
+                        command.rect.background_color.b,
+                        command.rect.background_color.a,
+                    );
+                    _ = c.SDL_RenderFillRect(renderer, &c.SDL_FRect{
+                        .x = @floatFromInt(command.rect.x),
+                        .y = @floatFromInt(command.rect.y),
+                        .w = @floatFromInt(command.rect.w),
+                        .h = @floatFromInt(command.rect.h),
+                    });
+                },
+            }
+        }
         _ = c.SDL_RenderPresent(renderer);
 
-        // c.SDL_Delay(16);
+        time += 1;
+        c.SDL_Delay(16);
     }
 
     c.SDL_DestroyWindow(window);

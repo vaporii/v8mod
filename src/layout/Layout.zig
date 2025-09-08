@@ -3,19 +3,25 @@ const Elements = @import("element.zig");
 const RenderCommand = @import("render_command.zig").RenderCommand;
 const Layout = @This();
 
-pub fn layout(root_element: Elements.RootElement, allocator: std.mem.Allocator) ![]RenderCommand {
-    var elements = std.ArrayList(RenderCommand).init(allocator);
-    try elements.append(RenderCommand{
+pub fn render(element: Elements.Element, allocator: std.mem.Allocator) ![]RenderCommand {
+    var commands = std.ArrayList(RenderCommand).init(allocator);
+    try commands.append(RenderCommand{
         .rect = .{
-            .background_color = root_element.background_color,
-            .x = root_element.x,
-            .y = root_element.y,
-            .w = root_element.w,
-            .h = root_element.h,
+            .background_color = element.background_color,
+            .x = element.x,
+            .y = element.y,
+            .w = element.w,
+            .h = element.h,
         },
     });
 
-    return elements.toOwnedSlice();
+    for (element.children) |child| {
+        const children_slice = try render(child, allocator);
+        defer allocator.free(children_slice);
+        try commands.appendSlice(children_slice);
+    }
+
+    return commands.toOwnedSlice();
 }
 
 pub const Sizing = union(enum) {
@@ -47,32 +53,16 @@ pub const Sizing = union(enum) {
 };
 
 pub const Padding = struct {
-    up: i32 = 0,
+    top: i32 = 0,
     right: i32 = 0,
-    down: i32 = 0,
+    bottom: i32 = 0,
     left: i32 = 0,
 
     pub fn pad(up: i32, right: i32, down: i32, left: i32) Padding {
         return Padding{
-            .up = up,
+            .top = up,
             .right = right,
-            .down = down,
-            .left = left,
-        };
-    }
-};
-
-pub const Margin = struct {
-    up: i32 = 0,
-    right: i32 = 0,
-    down: i32 = 0,
-    left: i32 = 0,
-
-    pub fn margin(up: i32, right: i32, down: i32, left: i32) Margin {
-        return Margin{
-            .up = up,
-            .right = right,
-            .down = down,
+            .bottom = down,
             .left = left,
         };
     }
