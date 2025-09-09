@@ -157,11 +157,59 @@ pub const Element = struct {
             for (self.children) |*child| {
                 if (child.width == .Grow) {
                     child.w += @max(0, @divTrunc(remaining_width, grow_element_count));
-                    child.h += @min(0, remaining_height);
+                }
+
+                if (child.height == .Grow) {
+                    child.h += @max(0, remaining_height);
                 }
 
                 child.growElements();
             }
-        } else {}
+        } else {
+            var remaining_height = self.h - (self.padding.top + self.padding.bottom) - @as(i32, @intCast(self.children.len - 1)) * self.child_gap;
+            const remaining_width = self.w - (self.padding.left + self.padding.right);
+
+            var grow_element_count: i32 = 0;
+            for (self.children) |*child| {
+                if (child.height == .Grow) grow_element_count += 1;
+                remaining_height -= child.h;
+            }
+            if (grow_element_count == 0) return;
+
+            while (remaining_height > 0) {
+                var min_height: i32 = std.math.maxInt(i32);
+                var min_height_idx: usize = 0;
+                var second_min_height: i32 = std.math.maxInt(i32);
+
+                for (self.children, 0..) |*child, i| {
+                    if (child.height != .Grow) continue;
+                    if (child.h < min_height) {
+                        second_min_height = min_height;
+                        min_height = child.h;
+                        min_height_idx = i;
+                    } else if (child.h < second_min_height) {
+                        second_min_height = child.h;
+                    }
+                }
+
+                if (min_height == second_min_height) break;
+
+                const add = @min(remaining_height, second_min_height - min_height);
+                self.children[min_height_idx].w += add;
+                remaining_height -= add;
+            }
+
+            for (self.children) |*child| {
+                if (child.height == .Grow) {
+                    child.h += @max(0, @divTrunc(remaining_height, grow_element_count));
+                }
+
+                if (child.width == .Grow) {
+                    child.w += @max(0, remaining_width);
+                }
+
+                child.growElements();
+            }
+        }
     }
 };
