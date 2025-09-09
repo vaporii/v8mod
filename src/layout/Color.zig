@@ -229,6 +229,8 @@ pub const dark_slate_gray = Color{ .r = 47, .g = 79, .b = 79, .a = 255 };
 pub const dark_slate_grey = Color{ .r = 47, .g = 79, .b = 79, .a = 255 };
 pub const black = Color{ .r = 0, .g = 0, .b = 0, .a = 255 };
 
+pub const transparent = Color{ .r = 0, .g = 0, .b = 0, .a = 0 };
+
 r: u8,
 g: u8,
 b: u8,
