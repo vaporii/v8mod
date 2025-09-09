@@ -1,3 +1,4 @@
+const std = @import("std");
 const Layout = @import("Layout.zig");
 const Color = @import("Color.zig");
 
@@ -53,7 +54,7 @@ pub const Element = struct {
         }
 
         switch (element.width) {
-            .Fit => {
+            .Fit, .Grow => {
                 for (element.children) |*child| {
                     if (element.layout == .horizontal) {
                         element.w += child.w;
@@ -65,11 +66,10 @@ pub const Element = struct {
             .Fixed => {
                 element.w += element.width.Fixed.size;
             },
-            else => {},
         }
 
         switch (element.height) {
-            .Fit => {
+            .Fit, .Grow => {
                 for (element.children) |*child| {
                     if (element.layout == .horizontal) {
                         element.h = @max(element.h, child.h);
@@ -81,7 +81,6 @@ pub const Element = struct {
             .Fixed => {
                 element.h += element.height.Fixed.size;
             },
-            else => {},
         }
 
         element.w += element.padding.left + element.padding.right;
@@ -119,39 +118,50 @@ pub const Element = struct {
     }
 
     pub fn growElements(self: *Element) void {
-        var remaining_width = self.w - (self.padding.left + self.padding.right);
-        var remaining_height = self.h - (self.padding.top + self.padding.bottom);
+        if (self.children.len == 0) return;
 
         if (self.layout == .horizontal) {
+            var remaining_width = self.w - (self.padding.left + self.padding.right) - @as(i32, @intCast(self.children.len - 1)) * self.child_gap;
+            const remaining_height = self.h - (self.padding.top + self.padding.bottom);
+
+            var grow_element_count: i32 = 0;
             for (self.children) |*child| {
+                if (child.width == .Grow) grow_element_count += 1;
                 remaining_width -= child.w;
             }
-            remaining_width -= if (self.children.len > 0) (@as(i32, @intCast(self.children.len - 1)) * self.child_gap) else 0;
+            if (grow_element_count == 0) return;
+
+            while (remaining_width > 0) {
+                var min_width: i32 = std.math.maxInt(i32);
+                var min_width_idx: usize = 0;
+                var second_min_width: i32 = std.math.maxInt(i32);
+
+                for (self.children, 0..) |*child, i| {
+                    if (child.width != .Grow) continue;
+                    if (child.w < min_width) {
+                        second_min_width = min_width;
+                        min_width = child.w;
+                        min_width_idx = i;
+                    } else if (child.w < second_min_width) {
+                        second_min_width = child.w;
+                    }
+                }
+
+                if (min_width == second_min_width) break;
+
+                const add = @min(remaining_width, second_min_width - min_width);
+                self.children[min_width_idx].w += add;
+                remaining_width -= add;
+            }
 
             for (self.children) |*child| {
                 if (child.width == .Grow) {
-                    child.w += remaining_width;
+                    child.w += @max(0, @divTrunc(remaining_width, grow_element_count));
+                    child.h += @min(0, remaining_height);
                 }
-                if (child.height == .Grow) {
-                    child.h += (remaining_height - child.h);
-                }
-                growElements(child);
-            }
-        } else if (self.layout == .vertical) {
-            for (self.children) |*child| {
-                remaining_height -= child.h;
-            }
-            remaining_height -= if (self.children.len > 0) (@as(i32, @intCast(self.children.len - 1)) * self.child_gap) else 0;
 
-            for (self.children) |*child| {
-                if (child.height == .Grow) {
-                    child.h += remaining_height;
-                }
-                if (child.width == .Grow) {
-                    child.w += (remaining_width - child.w);
-                }
-                growElements(child);
+                child.growElements();
             }
-        }
+        } else {}
     }
 };

@@ -82,7 +82,7 @@ pub fn main() !void {
             .children = &.{
                 Elements.Element.create(.{
                     .width = .grow(.{}),
-                    .height = .grow(.{}),
+                    .height = .fixed(@intCast(height)),
                     .background_color = Color.blue,
                     .padding = .pad(25, 25, 25, 25),
                     .child_gap = 25,
@@ -95,7 +95,12 @@ pub fn main() !void {
                         }),
                         Elements.Element.create(.{
                             .width = .grow(.{}),
-                            .height = .grow(.{}),
+                            .height = .fixed(200),
+                            .background_color = Color.yellow,
+                        }),
+                        Elements.Element.create(.{
+                            .width = .grow(.{}),
+                            .height = .fixed(200),
                             .background_color = Color.yellow,
                         }),
                         Elements.Element.create(.{
